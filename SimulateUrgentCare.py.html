@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>SimulateUrgentCare.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+SimulateUrgentCare.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># Run this page to execute the simulation</span>
+
+<span class="s2">import </span><span class="s1">deampy.plots.sample_paths </span><span class="s2">as </span><span class="s1">path</span>
+
+
+<span class="s2">import </span><span class="s1">UrgentCareModel </span><span class="s2">as </span><span class="s1">M</span>
+<span class="s2">import </span><span class="s1">Inputs </span><span class="s2">as </span><span class="s1">D</span>
+<span class="s2">import </span><span class="s1">ModelParameters </span><span class="s2">as </span><span class="s1">P</span>
+
+<span class="s0"># create an urgent care model</span>
+<span class="s1">urgentCareModel = M.UrgentCareModel(id=</span><span class="s3">1</span><span class="s2">, </span><span class="s1">parameters=P.Parameters())</span>
+
+<span class="s0"># simulate the urgent care</span>
+<span class="s1">urgentCareModel.simulate(sim_duration=D.SIM_DURATION)</span>
+
+<span class="s0"># sample path for patients waiting for mental health consultation</span>
+<span class="s1">path.plot_sample_path(</span>
+    <span class="s1">sample_path=urgentCareModel.simOutputs.nPatientsWaitingMH</span><span class="s2">,</span>
+    <span class="s1">title=</span><span class="s4">'Patients Waiting for MH Specialist'</span><span class="s2">,</span>
+    <span class="s1">x_label=</span><span class="s4">'Simulation time (hours)'</span><span class="s2">,</span>
+<span class="s1">)</span>
+<span class="s0"># sample path for patients in the system</span>
+<span class="s1">path.plot_sample_path(</span>
+    <span class="s1">sample_path=urgentCareModel.simOutputs.nPatientInSystem</span><span class="s2">,</span>
+    <span class="s1">title=</span><span class="s4">'Patients In System'</span><span class="s2">,</span>
+    <span class="s1">x_label=</span><span class="s4">'Simulation time (hours)'</span><span class="s2">,</span>
+<span class="s1">)</span>
+<span class="s0"># sample path for physician utilization</span>
+<span class="s1">path.plot_sample_path(</span>
+    <span class="s1">sample_path=urgentCareModel.simOutputs.nPhysiciansBusy</span><span class="s2">,</span>
+    <span class="s1">title=</span><span class="s4">'Physician Utilization'</span><span class="s2">,</span>
+    <span class="s1">x_label=</span><span class="s4">'Simulation time (hours)'</span>
+<span class="s1">)</span>
+<span class="s0"># sample path for MH Specialist utilisation</span>
+<span class="s1">path.plot_sample_path(</span>
+    <span class="s1">sample_path=urgentCareModel.simOutputs.nMHSpecialistBusy</span><span class="s2">,</span>
+    <span class="s1">title=</span><span class="s4">'Patients Time in System'</span><span class="s2">,</span>
+    <span class="s1">x_label=</span><span class="s4">'Hours'</span>
+<span class="s1">)</span>
+
+
+
+<span class="s1">print(</span><span class="s4">'Total patients arrived:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.nPatientsArrived)</span>
+<span class="s1">print(</span><span class="s4">'Total patients arrived in MH:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.nPatientsArrivedMH)</span>
+<span class="s1">print(</span><span class="s4">'Total patients served:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.nPatientsServed)</span>
+<span class="s1">print(</span><span class="s4">'Average patient time in system:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.get_ave_patient_time_in_system())</span>
+<span class="s1">print(</span><span class="s4">'Average patient waiting time for Physician:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.get_ave_patient_waiting_time_exam())</span>
+<span class="s1">print(</span><span class="s4">'Average patient waiting time in MH:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.get_ave_patient_waiting_time_MH())</span>
+<span class="s1">print(</span><span class="s4">'Total patients received mental health consultation:'</span><span class="s2">, </span><span class="s1">urgentCareModel.simOutputs.nPatientsReceivedConsult)</span>
+
+<span class="s1">urgentCareModel.print_trace()</span></pre>
+</body>
+</html>

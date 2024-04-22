@@ -1,0 +1,200 @@
+<html>
+<head>
+<title>ModelOutputs.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #629755; font-style: italic;}
+.s4 { color: #6897bb;}
+.s5 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+ModelOutputs.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">deampy.format_functions </span><span class="s0">import </span><span class="s1">format_number</span>
+<span class="s0">from </span><span class="s1">deampy.sample_path </span><span class="s0">import </span><span class="s1">PrevalenceSamplePath</span>
+
+<span class="s0">import </span><span class="s1">Inputs </span><span class="s0">as </span><span class="s1">D</span>
+
+<span class="s0">class </span><span class="s1">SimOutputs:</span>
+    <span class="s2"># to collect the outputs of a simulation run</span>
+
+    <span class="s0">def </span><span class="s1">__init__(self</span><span class="s0">, </span><span class="s1">sim_cal</span><span class="s0">, </span><span class="s1">trace_on=</span><span class="s0">False</span><span class="s1">):</span>
+        <span class="s3">&quot;&quot;&quot; 
+        :param sim_cal: simulation calendar 
+        :param warm_up_period: warm up period (hours) 
+        :param trace_on: set to True to report patient summary 
+        &quot;&quot;&quot;</span>
+
+        <span class="s1">self.simCal = sim_cal             </span><span class="s2"># simulation calendar (to know the current time)</span>
+        <span class="s1">self.traceOn = trace_on           </span><span class="s2"># if patient summary report should be prepared</span>
+        <span class="s1">self.nPatientsArrived = </span><span class="s4">0         </span><span class="s2"># number of patients arrived for physician care</span>
+        <span class="s1">self.nPatientsArrivedMH = </span><span class="s4">0       </span><span class="s2"># number of patients arrived for mental health care</span>
+        <span class="s1">self.nPatientsServed = </span><span class="s4">0          </span><span class="s2"># number of patients served</span>
+        <span class="s1">self.nPatientsReceivedConsult = </span><span class="s4">0 </span><span class="s2"># number of patients received consultation</span>
+        <span class="s1">self.patientTimeInSystem = []     </span><span class="s2"># observations on patients time spent in urgent care</span>
+        <span class="s1">self.patientTimeInWaitingRoomExam = []  </span><span class="s2"># observations on patients time spent in the physician waiting room</span>
+        <span class="s1">self.patientTimeInMHWaitingRoom = []    </span><span class="s2"># observations on patients time spent in the MH waiting room</span>
+
+        <span class="s1">self.patientSummary = []    </span><span class="s2"># id, tArrived, tLeft, duration waited, duration in the system, room type</span>
+        <span class="s0">if </span><span class="s1">self.traceOn:</span>
+            <span class="s1">self.patientSummary.append(</span>
+                <span class="s1">[</span><span class="s5">'Patient'</span><span class="s0">, </span><span class="s5">'Time Arrived'</span><span class="s0">, </span><span class="s5">'Time Left'</span><span class="s0">, </span><span class="s5">'Time Waited'</span><span class="s0">, </span><span class="s5">'Time In the System'</span><span class="s0">, </span><span class="s5">'Room Type'</span><span class="s1">])</span>
+
+        <span class="s2"># sample path for the patients waiting</span>
+        <span class="s1">self.nPatientsWaitingExam = PrevalenceSamplePath(</span>
+            <span class="s1">name=</span><span class="s5">'Number of patients waiting for Physician'</span><span class="s0">, </span><span class="s1">initial_size=</span><span class="s4">0</span><span class="s1">)</span>
+        <span class="s1">self.nPatientsWaitingMH = PrevalenceSamplePath(</span>
+            <span class="s1">name=</span><span class="s5">'Number of patients waiting for MH'</span><span class="s0">, </span><span class="s1">initial_size=</span><span class="s4">0</span><span class="s1">)</span>
+
+        <span class="s2"># sample path for the patients in system</span>
+        <span class="s1">self.nPatientInSystem = PrevalenceSamplePath(</span>
+            <span class="s1">name=</span><span class="s5">'Number of patients in the urgent care'</span><span class="s0">, </span><span class="s1">initial_size=</span><span class="s4">0</span><span class="s1">)</span>
+
+        <span class="s2"># sample path for the number of physicians busy</span>
+        <span class="s1">self.nPhysiciansBusy = PrevalenceSamplePath(</span>
+            <span class="s1">name=</span><span class="s5">'Number of physicians busy'</span><span class="s0">, </span><span class="s1">initial_size=</span><span class="s4">0</span><span class="s1">)</span>
+        <span class="s1">self.nMHSpecialistBusy = PrevalenceSamplePath(</span>
+            <span class="s1">name=</span><span class="s5">'Number of Mental Health Specialist busy'</span><span class="s0">, </span><span class="s1">initial_size=</span><span class="s4">0</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">collect_patient_arrival(self</span><span class="s0">, </span><span class="s1">patient):</span>
+            <span class="s3">&quot;&quot;&quot; collects statistics upon arrival of a patient 
+            :param patient: the patient who just arrived 
+            &quot;&quot;&quot;</span>
+        <span class="s2"># increment the number of patients arrived</span>
+            <span class="s1">self.nPatientsArrived += </span><span class="s4">1</span>
+
+        <span class="s2"># update the sample path of patients in the system</span>
+            <span class="s1">self.nPatientInSystem.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=+</span><span class="s4">1</span><span class="s1">)</span>
+
+        <span class="s2"># store arrival time of this patient</span>
+            <span class="s1">patient.tArrived = self.simCal.time</span>
+
+    <span class="s0">def </span><span class="s1">collect_patient_arrival_MH(self</span><span class="s0">, </span><span class="s1">patient):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics upon arrival of a patient to MH care 
+        :param patient: the patient who just arrived after diagnosing with depression 
+        &quot;&quot;&quot;</span>
+        <span class="s2"># increment the number of patients arrived in MH care</span>
+        <span class="s1">self.nPatientsArrivedMH += </span><span class="s4">1</span>
+        <span class="s2"># store arrival time of this patient</span>
+        <span class="s1">patient.tArrivedMH = self.simCal.time</span>
+
+    <span class="s0">def </span><span class="s1">collect_patient_joining_waiting_room(self</span><span class="s0">, </span><span class="s1">patient</span><span class="s0">, </span><span class="s1">room_type):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics when a patient joins a waiting room 
+        :param patient: the patient who is joining the waiting room 
+        &quot;&quot;&quot;</span>
+        <span class="s2"># store the time this patient joined the waiting room</span>
+
+
+
+        <span class="s0">if </span><span class="s1">room_type == </span><span class="s5">&quot;physician_exam&quot;</span><span class="s1">:</span>
+              <span class="s1">patient.tJoinedWaitingRoomExam = self.simCal.time</span>
+              <span class="s1">self.nPatientsWaitingExam.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=</span><span class="s4">1</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">room_type == </span><span class="s5">&quot;mental_health_consultation&quot;</span><span class="s1">:</span>
+              <span class="s1">patient.tJoinedMHWaitingRoom = self.simCal.time</span>
+              <span class="s1">self.nPatientsWaitingMH.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=</span><span class="s4">1</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">collect_patient_leaving_waiting_room(self</span><span class="s0">, </span><span class="s1">patient</span><span class="s0">, </span><span class="s1">room_type):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics when a patient leave a waiting room 
+        :param patient: the patient who is leave the waiting room 
+        &quot;&quot;&quot;</span>
+
+        <span class="s0">if </span><span class="s1">room_type == </span><span class="s5">&quot;physician_exam&quot;</span><span class="s1">:</span>
+            <span class="s1">self.nPatientsWaitingExam.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">)</span>
+            <span class="s1">patient.tLeftWaitingRoomExam = self.simCal.time</span>
+        <span class="s0">elif </span><span class="s1">room_type == </span><span class="s5">&quot;mental_health_consultation&quot;</span><span class="s1">:</span>
+            <span class="s1">self.nPatientsWaitingMH.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">)</span>
+            <span class="s1">patient.tLeftMHWaitingRoom = self.simCal.time</span>
+
+
+
+    <span class="s0">def </span><span class="s1">collect_patient_departure_exam(self</span><span class="s0">, </span><span class="s1">patient):</span>
+         <span class="s3">&quot;&quot;&quot; collects statistics for a departing patient from examination &quot;&quot;&quot;</span>
+         <span class="s1">time_in_system = </span><span class="s0">None</span>
+         <span class="s0">if </span><span class="s1">patient.tJoinedWaitingRoomExam </span><span class="s0">is None</span><span class="s1">:</span>
+             <span class="s1">time_waiting = </span><span class="s4">0</span>
+         <span class="s0">else</span><span class="s1">:</span>
+             <span class="s1">time_waiting = patient.tLeftWaitingRoomExam - patient.tJoinedWaitingRoomExam</span>
+
+         <span class="s0">if not </span><span class="s1">patient.ifWithDepression: </span><span class="s2"># if patient isn't diagnosed with depression and leaves urgent care post physician examination</span>
+             <span class="s1">time_in_system = self.simCal.time - patient.tArrived</span>
+             <span class="s2"># reduce number of patients in the system by 1</span>
+             <span class="s1">self.nPatientInSystem.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">)</span>
+             <span class="s1">self.patientTimeInSystem.append(time_in_system)</span>
+
+         <span class="s1">self.nPhysiciansBusy.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">) </span><span class="s2"># reduce number of physicians busy by 1</span>
+         <span class="s1">self.nPatientsServed += </span><span class="s4">1</span>
+         <span class="s1">self.patientTimeInWaitingRoomExam.append(time_waiting)</span>
+
+         <span class="s0">if </span><span class="s1">self.traceOn:</span>
+             <span class="s2"># if patient transferred to MH care, then time in system during physician care stage is shown none/incomplete</span>
+             <span class="s2"># only concrete record for patient who leaves urgent care after physician exam</span>
+             <span class="s1">time_in_system_str = format_number(time_in_system</span><span class="s0">, </span><span class="s1">deci=D.DECI) </span><span class="s0">if </span><span class="s1">time_in_system </span><span class="s0">is not None else </span><span class="s5">&quot;None&quot;</span>
+             <span class="s1">self.patientSummary.append([</span>
+                     <span class="s1">str(patient)</span><span class="s0">, </span><span class="s1">format_number(patient.tArrived</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">,</span>
+                     <span class="s1">format_number(self.simCal.time</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">, </span><span class="s1">format_number(time_waiting</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">,</span>
+                     <span class="s1">time_in_system_str</span><span class="s0">, </span><span class="s5">&quot;Physician Exam&quot;</span><span class="s1">])</span>
+
+
+    <span class="s0">def </span><span class="s1">collect_patient_departure_MH(self</span><span class="s0">, </span><span class="s1">patient):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics for a departing patient from mental health consultation &quot;&quot;&quot;</span>
+        <span class="s0">if </span><span class="s1">patient.tJoinedMHWaitingRoom </span><span class="s0">is None</span><span class="s1">: </span><span class="s2"># for patients who directly left the urgent care with negative depression diagnosis</span>
+            <span class="s1">time_waiting = </span><span class="s4">0</span>
+        <span class="s0">else</span><span class="s1">:</span>
+            <span class="s1">time_waiting = patient.tLeftMHWaitingRoom- patient.tJoinedMHWaitingRoom</span>
+        <span class="s1">time_in_system = self.simCal.time - patient.tArrived </span><span class="s2"># for patients who were diagnosed for depression</span>
+        <span class="s1">self.nPatientInSystem.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">)</span>
+        <span class="s1">self.nMHSpecialistBusy.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=-</span><span class="s4">1</span><span class="s1">)</span>
+        <span class="s1">self.nPatientsReceivedConsult += </span><span class="s4">1</span>
+        <span class="s1">self.patientTimeInMHWaitingRoom.append(time_waiting)</span>
+        <span class="s1">self.patientTimeInSystem.append(time_in_system)</span>
+        <span class="s0">if </span><span class="s1">self.traceOn:</span>
+           <span class="s1">self.patientSummary.append([</span>
+            <span class="s1">str(patient)</span><span class="s0">, </span><span class="s1">format_number(patient.tArrived</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">,</span>
+            <span class="s1">format_number(self.simCal.time</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">, </span><span class="s1">format_number(time_waiting</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">,</span>
+            <span class="s1">format_number(time_in_system</span><span class="s0">, </span><span class="s1">deci=D.DECI)</span><span class="s0">, </span><span class="s5">&quot;Mental Health Consultation&quot;</span>
+            <span class="s1">])</span>
+
+
+    <span class="s0">def </span><span class="s1">collect_patient_starting_exam(self):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics for a patient who just started the exam &quot;&quot;&quot;</span>
+        <span class="s1">self.nPhysiciansBusy.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=+</span><span class="s4">1</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">collect_patient_starting_MH(self):</span>
+        <span class="s3">&quot;&quot;&quot; collects statistics for a patient who just started the consultation &quot;&quot;&quot;</span>
+        <span class="s1">self.nMHSpecialistBusy.record_increment(time=self.simCal.time</span><span class="s0">, </span><span class="s1">increment=+</span><span class="s4">1</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">collect_end_of_simulation(self):</span>
+        <span class="s3">&quot;&quot;&quot; collects the performance statistics at the end of the simulation &quot;&quot;&quot;</span>
+        <span class="s1">self.nPatientsWaitingExam.close(time=self.simCal.time)</span>
+        <span class="s1">self.nPatientsWaitingMH.close(time=self.simCal.time)</span>
+        <span class="s1">self.nPatientInSystem.close(time=self.simCal.time)</span>
+        <span class="s1">self.nPhysiciansBusy.close(time=self.simCal.time)</span>
+        <span class="s1">self.nMHSpecialistBusy.close(time=self.simCal.time)</span>
+
+
+    <span class="s0">def </span><span class="s1">get_ave_patient_time_in_system(self):</span>
+        <span class="s3">&quot;&quot;&quot; returns average patient time in system &quot;&quot;&quot;</span>
+        <span class="s0">return </span><span class="s1">sum(self.patientTimeInSystem) / len(self.patientTimeInSystem)</span>
+
+
+    <span class="s0">def </span><span class="s1">get_ave_patient_waiting_time_exam(self):</span>
+        <span class="s3">&quot;&quot;&quot; returns average patient waiting time &quot;&quot;&quot;</span>
+        <span class="s0">return </span><span class="s1">sum(self.patientTimeInWaitingRoomExam) / len(self.patientTimeInWaitingRoomExam)</span>
+
+    <span class="s0">def </span><span class="s1">get_ave_patient_waiting_time_MH(self):</span>
+        <span class="s3">&quot;&quot;&quot; returns average patient waiting time &quot;&quot;&quot;</span>
+        <span class="s0">return </span><span class="s1">sum(self.patientTimeInMHWaitingRoom) / len(self.patientTimeInMHWaitingRoom)</span>
+
+
+
+
+</pre>
+</body>
+</html>

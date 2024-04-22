@@ -1,0 +1,117 @@
+<html>
+<head>
+<title>UrgentCareModel.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #629755; font-style: italic;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+.s5 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+UrgentCareModel.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
+<span class="s0">from </span><span class="s1">deampy.discrete_event_sim </span><span class="s0">import </span><span class="s1">SimulationCalendar</span>
+<span class="s0">from </span><span class="s1">deampy.in_out_functions </span><span class="s0">import </span><span class="s1">write_csv</span>
+<span class="s0">from </span><span class="s1">deampy.support.simulation </span><span class="s0">import </span><span class="s1">DiscreteEventSimTrace</span>
+<span class="s0">import </span><span class="s1">Inputs </span><span class="s0">as </span><span class="s1">D</span>
+
+<span class="s0">from </span><span class="s1">ModelEntities </span><span class="s0">import </span><span class="s1">UrgentCare</span><span class="s0">, </span><span class="s1">Patient</span>
+<span class="s0">from </span><span class="s1">ModelEvents </span><span class="s0">import </span><span class="s1">CloseUrgentCare</span><span class="s0">, </span><span class="s1">Arrival</span>
+<span class="s0">from </span><span class="s1">ModelOutputs </span><span class="s0">import </span><span class="s1">SimOutputs</span>
+
+
+<span class="s0">class </span><span class="s1">UrgentCareModel:</span>
+    <span class="s0">def </span><span class="s1">__init__(self</span><span class="s0">, </span><span class="s1">id</span><span class="s0">, </span><span class="s1">parameters):</span>
+        <span class="s2">&quot;&quot;&quot; 
+        :param id: ID of this urgent care model 
+        :param parameters: parameters of this model 
+        &quot;&quot;&quot;</span>
+
+        <span class="s1">self.id = id</span>
+        <span class="s1">self.params = parameters    </span><span class="s3"># model parameters</span>
+        <span class="s1">self.simCal = </span><span class="s0">None  </span><span class="s3"># simulation calendar</span>
+        <span class="s1">self.simOutputs = </span><span class="s0">None</span>
+        <span class="s1">self.trace = </span><span class="s0">None</span>
+        <span class="s1">self.urgentCare = </span><span class="s0">None      </span><span class="s3"># urgent care</span>
+
+    <span class="s0">def </span><span class="s1">simulate(self</span><span class="s0">, </span><span class="s1">sim_duration):</span>
+        <span class="s2">&quot;&quot;&quot; simulate the urgent care 
+        :param sim_duration: duration of simulation (hours) 
+         &quot;&quot;&quot;</span>
+
+        <span class="s3"># random number generator</span>
+        <span class="s1">rng = np.random.RandomState(seed=self.id)</span>
+
+        <span class="s3"># initialize the simulation</span>
+        <span class="s1">self.__initialize(rng=rng)</span>
+
+        <span class="s3"># while there is an event scheduled in the simulation calendar</span>
+        <span class="s3"># and the simulation time is less than the simulation duration</span>
+        <span class="s0">while </span><span class="s1">self.simCal.n_events() &gt; </span><span class="s4">0 </span><span class="s0">and </span><span class="s1">self.simCal.time &lt;= sim_duration:</span>
+            <span class="s1">self.simCal.get_next_event().process(rng=rng)</span>
+
+        <span class="s3"># collect the end of simulation statistics</span>
+        <span class="s1">self.simOutputs.collect_end_of_simulation()</span>
+
+    <span class="s0">def </span><span class="s1">__initialize(self</span><span class="s0">, </span><span class="s1">rng):</span>
+        <span class="s2">&quot;&quot;&quot; initialize the simulation model 
+        :param rng: random number generator 
+        &quot;&quot;&quot;</span>
+
+        <span class="s3"># simulation calendar</span>
+        <span class="s1">self.simCal = SimulationCalendar()</span>
+
+        <span class="s3"># simulation outputs</span>
+        <span class="s1">self.simOutputs = SimOutputs(sim_cal=self.simCal</span><span class="s0">,</span>
+                                     <span class="s1">trace_on=D.TRACE_ON)</span>
+        <span class="s3"># simulation trace</span>
+        <span class="s1">self.trace = DiscreteEventSimTrace(sim_calendar=self.simCal</span><span class="s0">,</span>
+                                           <span class="s1">if_should_trace=D.TRACE_ON</span><span class="s0">,</span>
+                                           <span class="s1">deci=D.DECI)</span>
+
+        <span class="s3"># urgent care</span>
+        <span class="s1">self.urgentCare = UrgentCare(id=id</span><span class="s0">,</span>
+                                     <span class="s1">parameters=self.params</span><span class="s0">,</span>
+                                     <span class="s1">sim_cal=self.simCal</span><span class="s0">,</span>
+                                     <span class="s1">sim_out=self.simOutputs</span><span class="s0">,</span>
+                                     <span class="s1">trace=self.trace)</span>
+
+        <span class="s3"># schedule the closing event</span>
+        <span class="s1">self.simCal.add_event(</span>
+            <span class="s1">event=CloseUrgentCare(time=self.params.hoursOpen</span><span class="s0">,</span>
+                                  <span class="s1">urgent_care=self.urgentCare)</span>
+        <span class="s1">)</span>
+
+        <span class="s3"># find the arrival time of the first patient</span>
+        <span class="s1">arrival_time = self.params.arrivalTimeDist.sample(rng=rng)</span>
+
+        <span class="s3"># schedule the arrival of the first patient</span>
+        <span class="s1">self.simCal.add_event(</span>
+            <span class="s1">event=Arrival(time=arrival_time</span><span class="s0">,</span>
+                          <span class="s1">patient=Patient(id=</span><span class="s4">0</span><span class="s0">, </span><span class="s1">if_with_depression=</span><span class="s0">False</span><span class="s1">)</span><span class="s0">,</span>
+                          <span class="s1">urgent_care=self.urgentCare)</span>
+        <span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">print_trace(self):</span>
+        <span class="s2">&quot;&quot;&quot; outputs trace &quot;&quot;&quot;</span>
+
+        <span class="s3"># simulation trace</span>
+        <span class="s1">self.trace.print_trace(filename=</span><span class="s5">'Trace-Replication' </span><span class="s1">+ str(self.id) + </span><span class="s5">'.txt'</span><span class="s0">,</span>
+                                   <span class="s1">directory=</span><span class="s5">'Trace'</span><span class="s0">,</span>
+                                   <span class="s1">delete_existing_files=</span><span class="s0">True</span><span class="s1">)</span>
+        <span class="s3"># patient summary</span>
+        <span class="s1">write_csv(file_name=</span><span class="s5">'Patients-Replication' </span><span class="s1">+ str(self.id) + </span><span class="s5">'.txt'</span><span class="s0">,</span>
+                      <span class="s1">rows=self.simOutputs.patientSummary</span><span class="s0">,</span>
+                      <span class="s1">directory=</span><span class="s5">'Patients Summary'</span><span class="s0">,</span>
+                      <span class="s1">delete_existing_files=</span><span class="s0">True</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

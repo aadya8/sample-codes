@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>Inputs.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Inputs.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># Author: Aadya Mishra</span>
+<span class="s0"># Task: Simulate using discrete-event simulation an urgent care unit that has 20 physicians and 1 Mental Health (MH) Specialist.</span>
+<span class="s0"># Patients will also get screened for depression during their exam. If the result is positive, they will be seen by an on-site mental health specialist before leaving the urgent care.</span>
+<span class="s0"># Forwarded to MH care only after completing their visit with the primary care physician.</span>
+<span class="s0"># adding a simulation trace to track what exactly happens to each patients, plot different sample paths, and report several performance statistics</span>
+
+
+<span class="s0"># simulation settings</span>
+<span class="s1">TRACE_ON = </span><span class="s2">True</span>
+<span class="s1">DECI = </span><span class="s3">5</span>
+<span class="s1">SIM_DURATION = </span><span class="s3">100000   </span><span class="s0"># max hours until simulation is terminated as the simulation continues as long as there is a patient in the urgent care</span>
+<span class="s1">HOURS_OPEN = </span><span class="s3">20         </span><span class="s0"># hours the urgent care is open</span>
+<span class="s1">N_PCP = </span><span class="s3">10                </span><span class="s0"># number of primary-care physicians</span>
+<span class="s1">MEAN_ARRIVAL_TIME = </span><span class="s3">1</span><span class="s1">/</span><span class="s3">60       </span><span class="s0"># mean patients inter-arrival time (hours)</span>
+<span class="s1">MEAN_EXAM_DURATION = </span><span class="s3">10</span><span class="s1">/</span><span class="s3">60       </span><span class="s0"># mean of exam duration (hours)</span>
+<span class="s1">MEAN_MH_CONSULT = </span><span class="s3">20</span><span class="s1">/</span><span class="s3">60         </span><span class="s0"># mean duration of mental health consultation</span>
+<span class="s1">PROB_DEPRESSION = </span><span class="s3">0.1           </span><span class="s0"># probability that a patient is diagnosed with depression</span></pre>
+</body>
+</html>
